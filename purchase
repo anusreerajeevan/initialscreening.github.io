@@ -1,0 +1,102 @@
+def calculate_discount(cart, discounts):
+    eligible_discounts = []
+    for discount in discounts:
+        if discount == "flat_10_discount" and cart["subtotal"] > 200:
+            eligible_discounts.append(("flat_10_discount", 10))
+        elif discount == "bulk_5_discount":
+            for product in cart["products"]:
+                if product["quantity"] > 10:
+                    discount_amount = product["price"] * 0.05
+                    eligible_discounts.append(("bulk_5_discount", discount_amount))
+        elif discount == "bulk_10_discount" and cart["total_quantity"] > 20:
+            discount_amount = cart["subtotal"] * 0.1
+            eligible_discounts.append(("bulk_10_discount", discount_amount))
+        elif discount == "tiered_50_discount" and cart["total_quantity"] > 30:
+            for product in cart["products"]:
+                if product["quantity"] > 15:
+                    discount_amount = (product["quantity"] - 15) * (product["price"] * 0.5)
+                    eligible_discounts.append(("tiered_50_discount", discount_amount))
+    if eligible_discounts:
+        return max(eligible_discounts, key=lambda x: x[1])
+    else:
+        return None
+
+
+def calculate_shipping_fee(cart):
+    packages = cart["total_quantity"] // 10
+    if cart["total_quantity"] % 10 != 0:
+        packages += 1
+    shipping_fee = packages * 5
+    return shipping_fee
+
+
+def calculate_gift_wrap_fee(cart):
+    gift_wrap_fee = 0
+    for product in cart["products"]:
+        if product["gift_wrapped"]:
+            gift_wrap_fee += product["quantity"]
+    return gift_wrap_fee
+
+
+def calculate_total(cart, discount):
+    subtotal = cart["subtotal"]
+    if discount:
+        subtotal -= discount[1]
+    shipping_fee = calculate_shipping_fee(cart)
+    gift_wrap_fee = calculate_gift_wrap_fee(cart)
+    total = subtotal + shipping_fee + gift_wrap_fee
+    return total
+
+
+def display_order_details(cart, discount):
+    print("Product Details:")
+    for product in cart["products"]:
+        print(f"Product Name: {product['name']}")
+        print(f"Quantity: {product['quantity']}")
+        print(f"Total Amount: ${product['quantity'] * product['price']}")
+        print()
+    print(f"Subtotal: ${cart['subtotal']}")
+    if discount:
+        print(f"Discount Applied: {discount[0]}")
+        print(f"Discount Amount: ${discount[1]}")
+    print(f"Shipping Fee: ${calculate_shipping_fee(cart)}")
+    print(f"Gift Wrap Fee: ${calculate_gift_wrap_fee(cart)}")
+    print(f"Total: ${calculate_total(cart, discount)}")
+
+
+def main():
+
+    product = {"Product A":20, "Product B":40, "Product C":50}
+
+    discounts = [
+        "flat_10_discount",
+        "bulk_5_discount",
+        "bulk_10_discount",
+        "tiered_50_discount"
+    ]
+
+    cart = {"products": [], "subtotal": 0, "total_quantity": 0}
+
+    file = open('purchase.txt', mode = 'r', encoding = 'utf-8-sig')
+
+    lines = file.readlines()
+    file.close()
+    for line in lines:
+        line = line.split(',')
+        line = [i.strip() for i in line]
+        product_name = line[0]
+        quantity = int(line[1])
+        gift_wrapped = (line[2].lower() == "yes")
+        product_price = int(product[product_name])
+        total_amount = quantity * product_price
+        cart["products"].append({"name": product_name, "quantity": quantity, "price": product_price, "gift_wrapped":gift_wrapped})
+        cart["subtotal"] += total_amount
+        cart["total_quantity"] += quantity
+
+    discount = calculate_discount(cart, discounts)
+    display_order_details(cart, discount)
+
+
+
+if __name__ == "__main__":
+    main()
