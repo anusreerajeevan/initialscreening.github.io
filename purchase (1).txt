@@ -1,0 +1,2 @@
+Product A,20,yes
+Product C,2,yes
